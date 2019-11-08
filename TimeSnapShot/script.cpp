@@ -117,7 +117,7 @@ void get_button_state(bool *a, bool *b, bool *up, bool *down, bool *l, bool *r)
 
 void menu_beep()
 {
-	AUDIO::PLAY_SOUND_FRONTEND(-1, "NAV_UP_DOWN", "HUD_FRONTEND_DEFAULT_SOUNDSET", 0);
+	AUDIO::PLAY_SOUND_FRONTEND(-1, "CHECKPOINT_NORMAL", "HUD_MINI_GAME_SOUNDSET", 1);
 }
 
 std::string statusText;
@@ -282,239 +282,11 @@ bool skinchanger_used = false;
 void update_features() 
 {
 	update_status_text();
-
-	update_vehicle_guns();
-
-	// changing player model if died/arrested while being in another skin, since it can cause inf loading loop
-	if (skinchanger_used)
-		check_player_model();
-
-	// wait until player is ready, basicly to prevent using the trainer while player is dead or arrested
-	while (ENTITY::IS_ENTITY_DEAD(PLAYER::PLAYER_PED_ID()) || PLAYER::IS_PLAYER_BEING_ARRESTED(PLAYER::PLAYER_ID(), TRUE))
-		WAIT(0);
-
-	// read default feature values from the game
-	featureWorldRandomCops = PED::CAN_CREATE_RANDOM_COPS() == TRUE;
-
-	// common variables
-	Player player = PLAYER::PLAYER_ID();
-	Ped playerPed = PLAYER::PLAYER_PED_ID();	
-	BOOL bPlayerExists = ENTITY::DOES_ENTITY_EXIST(playerPed);
-
-	// player invincible
-	if (featurePlayerInvincibleUpdated)
-	{
-		if (bPlayerExists && !featurePlayerInvincible)
-			PLAYER::SET_PLAYER_INVINCIBLE(player, FALSE);
-		featurePlayerInvincibleUpdated = false;
-	}
-	if (featurePlayerInvincible)
-	{
-		if (bPlayerExists)
-			PLAYER::SET_PLAYER_INVINCIBLE(player, TRUE);
-	}
-
-	// player never wanted
-	if (featurePlayerNeverWanted)
-	{
-		if (bPlayerExists)
-			PLAYER::CLEAR_PLAYER_WANTED_LEVEL(player);
-	}
-
-	// police ignore player
-	if (featurePlayerIgnoredUpdated)
-	{
-		if (bPlayerExists)
-			PLAYER::SET_POLICE_IGNORE_PLAYER(player, featurePlayerIgnored);
-		featurePlayerIgnoredUpdated = false;
-	}
-
-	// player special ability
-	if (featurePlayerUnlimitedAbility)
-	{
-		if (bPlayerExists)
-			PLAYER::SPECIAL_ABILITY_FILL_METER(player, 1);
-	}
-
-	// player no noise
-	if (featurePlayerNoNoiseUpdated)
-	{
-		if (bPlayerExists && !featurePlayerNoNoise)
-			PLAYER::SET_PLAYER_NOISE_MULTIPLIER(player, 1.0);
-		featurePlayerNoNoiseUpdated = false;
-	}
-	if (featurePlayerNoNoise)
-		PLAYER::SET_PLAYER_NOISE_MULTIPLIER(player, 0.0);
-
-	// player fast swim
-	if (featurePlayerFastSwimUpdated)
-	{
-		if (bPlayerExists && !featurePlayerFastSwim)
-			PLAYER::SET_SWIM_MULTIPLIER_FOR_PLAYER(player, 1.0);
-		featurePlayerFastSwimUpdated = false;
-	}
-	if (featurePlayerFastSwim)
-		PLAYER::SET_SWIM_MULTIPLIER_FOR_PLAYER(player, 1.49);
-
-	// player fast run
-	if (featurePlayerFastRunUpdated)
-	{
-		if (bPlayerExists && !featurePlayerFastRun)
-			PLAYER::SET_RUN_SPRINT_MULTIPLIER_FOR_PLAYER(player, 1.0);
-		featurePlayerFastRunUpdated = false;
-	}
-	if (featurePlayerFastRun)
-		PLAYER::SET_RUN_SPRINT_MULTIPLIER_FOR_PLAYER(player, 1.49);
-
-	// player super jump
-	if (featurePlayerSuperJump)
-	{
-		if (bPlayerExists)
-			GAMEPLAY::SET_SUPER_JUMP_THIS_FRAME(player);
-	}
-
-	// weapon
-	if (featureWeaponFireAmmo)
-	{
-		if (bPlayerExists)
-			GAMEPLAY::SET_FIRE_AMMO_THIS_FRAME(player);
-	}
-	if (featureWeaponExplosiveAmmo)
-	{
-		if (bPlayerExists)
-			GAMEPLAY::SET_EXPLOSIVE_AMMO_THIS_FRAME(player);
-	}
-	if (featureWeaponExplosiveMelee)
-	{
-		if (bPlayerExists)
-			GAMEPLAY::SET_EXPLOSIVE_MELEE_THIS_FRAME(player);
-	}
-
-	// weapon no reload
-	if (bPlayerExists && featureWeaponNoReload)
-	{
-		Hash cur;
-		if (WEAPON::GET_CURRENT_PED_WEAPON(playerPed, &cur, 1))
-		{
-			if (WEAPON::IS_WEAPON_VALID(cur))
-			{
-				int maxAmmo;
-				if (WEAPON::GET_MAX_AMMO(playerPed, cur, &maxAmmo))
-				{
-					WEAPON::SET_PED_AMMO(playerPed, cur, maxAmmo);
-
-					maxAmmo = WEAPON::GET_MAX_AMMO_IN_CLIP(playerPed, cur, 1);
-					if (maxAmmo > 0)
-						WEAPON::SET_AMMO_IN_CLIP(playerPed, cur, maxAmmo);
-				}
-			}
-		}
-	}
-
-	// player's vehicle invincible
-	if (featureVehInvincibleUpdated)
-	{
-		if (bPlayerExists && !featureVehInvincible && PED::IS_PED_IN_ANY_VEHICLE(playerPed, 0))
-		{
-			Vehicle veh = PED::GET_VEHICLE_PED_IS_USING(playerPed);
-			ENTITY::SET_ENTITY_INVINCIBLE(veh, FALSE);
-			ENTITY::SET_ENTITY_PROOFS(veh, 0, 0, 0, 0, 0, 0, 0, 0);
-			VEHICLE::SET_VEHICLE_TYRES_CAN_BURST(veh, 1);
-			VEHICLE::SET_VEHICLE_WHEELS_CAN_BREAK(veh, 1);
-			VEHICLE::SET_VEHICLE_CAN_BE_VISIBLY_DAMAGED(veh, 1);
-		}
-		featureVehInvincibleUpdated = false;
-	}
-	if (featureVehInvincible)
-	{
-		if (bPlayerExists && PED::IS_PED_IN_ANY_VEHICLE(playerPed, 0))
-		{
-			Vehicle veh = PED::GET_VEHICLE_PED_IS_USING(playerPed);
-			ENTITY::SET_ENTITY_INVINCIBLE(veh, TRUE);
-			ENTITY::SET_ENTITY_PROOFS(veh, 1, 1, 1, 1, 1, 1, 1, 1);	
-			VEHICLE::SET_VEHICLE_TYRES_CAN_BURST(veh, 0);
-			VEHICLE::SET_VEHICLE_WHEELS_CAN_BREAK(veh, 0);
-			VEHICLE::SET_VEHICLE_CAN_BE_VISIBLY_DAMAGED(veh, 0);
-		}
-	}
-
-	// player's vehicle invincible wheels, usefull with custom handling
-	if (featureVehInvincibleWheelsUpdated)
-	{
-		if (bPlayerExists && !featureVehInvincibleWheels && PED::IS_PED_IN_ANY_VEHICLE(playerPed, 0))
-		{
-			Vehicle veh = PED::GET_VEHICLE_PED_IS_USING(playerPed);
-			VEHICLE::SET_VEHICLE_TYRES_CAN_BURST(veh, TRUE);
-			VEHICLE::SET_VEHICLE_WHEELS_CAN_BREAK(veh, TRUE);
-			VEHICLE::SET_VEHICLE_HAS_STRONG_AXLES(veh, FALSE);
-		}
-		featureVehInvincibleWheelsUpdated = false;
-	}
-	if (featureVehInvincibleWheels)
-	{
-		if (bPlayerExists && PED::IS_PED_IN_ANY_VEHICLE(playerPed, 0))
-		{
-			Vehicle veh = PED::GET_VEHICLE_PED_IS_USING(playerPed);
-			VEHICLE::SET_VEHICLE_TYRES_CAN_BURST(veh, FALSE);
-			VEHICLE::SET_VEHICLE_WHEELS_CAN_BREAK(veh, FALSE);
-			VEHICLE::SET_VEHICLE_HAS_STRONG_AXLES(veh, TRUE);
-		}
-	}
-
-	// seat belt
-	const int PED_FLAG_CAN_FLY_THRU_WINDSCREEN = 32;
-	if (featureVehSeatbeltUpdated)
-	{
-		if (bPlayerExists && !featureVehSeatbelt)
-			PED::SET_PED_CONFIG_FLAG(playerPed, PED_FLAG_CAN_FLY_THRU_WINDSCREEN, TRUE);
-		featureVehSeatbeltUpdated = false;
-	}
-	if (featureVehSeatbelt)
-	{
-		if (bPlayerExists)
-		{
-			if (PED::GET_PED_CONFIG_FLAG(playerPed, PED_FLAG_CAN_FLY_THRU_WINDSCREEN, TRUE))
-				PED::SET_PED_CONFIG_FLAG(playerPed, PED_FLAG_CAN_FLY_THRU_WINDSCREEN, FALSE);
-		}
-	}
-
-	// player's vehicle boost
-	if (featureVehSpeedBoost && bPlayerExists && PED::IS_PED_IN_ANY_VEHICLE(playerPed, 0))
-	{
-		Vehicle veh = PED::GET_VEHICLE_PED_IS_USING(playerPed);
-		DWORD model = ENTITY::GET_ENTITY_MODEL(veh);
-
-		bool bUp = IsKeyDown(VK_NUMPAD9);
-		bool bDown = IsKeyDown(VK_NUMPAD3);
-
-		if (bUp || bDown)
-		{			
-			float speed = ENTITY::GET_ENTITY_SPEED(veh);
-			if (bUp) 
-			{
-				if (speed < 3.0f) speed = 3.0f;
-				speed += speed * 0.05f;
-				VEHICLE::SET_VEHICLE_FORWARD_SPEED(veh, speed);
-			} else
-			if (ENTITY::IS_ENTITY_IN_AIR(veh) || speed > 5.0) 
-				VEHICLE::SET_VEHICLE_FORWARD_SPEED(veh, 0.0);
-		}
-	}
-
 	// time pause
 	if (featureTimePausedUpdated)
 	{
 		TIME::PAUSE_CLOCK(featureTimePaused);
 		featureTimePausedUpdated = false;
-	}
-
-	// time sync
-	if (featureTimeSynced)
-	{
-		time_t now = time(0);
-		tm t;
-		localtime_s(&t, &now);
-		TIME::SET_CLOCK_TIME(t.tm_hour, t.tm_min, t.tm_sec);
 	}
 
 	// hide hud
@@ -776,6 +548,7 @@ bool process_skinchanger_menu()
 
 int teleportActiveLineIndex = 0;
 
+// todo: tp
 bool process_teleport_menu()
 {
 	const float lineWidth = 250.0;
@@ -1573,6 +1346,7 @@ void process_world_menu()
 
 int activeLineIndexTime = 0;
 
+//todo: time
 void process_time_menu()
 {
 	const float lineWidth = 250.0;
@@ -2033,7 +1807,12 @@ void main()
 		if (trainer_switch_pressed())
 		{
 			menu_beep();
-			process_main_menu();
+			featureMiscHideHud = !featureMiscHideHud;
+			int h = TIME::GET_CLOCK_HOURS();
+			h = (h == 23) ? 0 : h + 1;
+			int m = TIME::GET_CLOCK_MINUTES();
+			TIME::SET_CLOCK_TIME(h, m, 0);
+			//process_main_menu();
 		}
 
 		update_features();		
