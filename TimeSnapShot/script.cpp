@@ -67,10 +67,7 @@ void setZCoord(Vector3& coords) {
 	};
 	Entity e = PLAYER::PLAYER_PED_ID();
 	for (int i = 0; sizeof(groundCheckHeight) / sizeof(float); i++) {
-		//ENTITY::SET_ENTITY_COORDS_NO_OFFSET(e, coords.x, coords.y, groundCheckHeight[i], 0, 0, 1);
-		STREAMING::CLEAR_FOCUS();
-		STREAMING::CLEAR_HD_AREA();
-		STREAMING::_SET_FOCUS_AREA(coords.x, coords.y, groundCheckHeight[i], 0, 0, 0);
+		ENTITY::SET_ENTITY_COORDS_NO_OFFSET(e, coords.x, coords.y, groundCheckHeight[i], 0, 0, 1);
 		WAIT(200);
 		if (GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, groundCheckHeight[i], &coords.z, false)) {
 			groundFound = true;
@@ -95,7 +92,7 @@ void setGroundZ(Vector3& coords) {
 		400, 300, 200, 100, 0, -100, -200, -300, -400, -500 };
 
 	static float thirdCheck[] = { -500, -400, -300, -200, -100, 0,
-		100, 200, 300, 400, 500, 600, 700, 800, 900, 1000};
+		100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
 
 	if (GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, 1000.0, &coords.z, false)) {
 		return;
@@ -119,6 +116,9 @@ void setGroundZ(Vector3& coords) {
 	}
 }
 
+bool disableGravityToggle = true;
+bool featurePlayerIgnoredToggle = true;
+
 void update_features()
 {
 	// wait until player is ready, basicly to prevent using the trainer while player is dead or arrested
@@ -131,8 +131,31 @@ void update_features()
 	BOOL bPlayerExists = ENTITY::DOES_ENTITY_EXIST(playerPed);
 
 	// player invincible
-	if (bPlayerExists)
+	if (bPlayerExists) {
 		PLAYER::SET_PLAYER_INVINCIBLE(player, TRUE);
+	}
+
+	// player never wanted
+	if (bPlayerExists) {
+		PLAYER::CLEAR_PLAYER_WANTED_LEVEL(player);
+	}
+
+	// police ignore player
+	if (featurePlayerIgnoredToggle)
+	{
+		if (bPlayerExists) {
+			PLAYER::SET_POLICE_IGNORE_PLAYER(player, true);
+			featurePlayerIgnoredToggle = false;
+		}
+
+	}
+
+	if (disableGravityToggle) {
+		if (bPlayerExists) {
+			PED::SET_PED_GRAVITY(playerPed, true);
+			disableGravityToggle = false;
+		}
+	}
 }
 
 void main()
@@ -145,10 +168,6 @@ void main()
 	GAMEPLAY::SET_FADE_IN_AFTER_LOAD(false);
 	Player player = PLAYER::PLAYER_ID();
 	PLAYER::SET_PLAYER_INVINCIBLE(player, TRUE);
-	// hide hud and radar
-	// DOES NOT WORK
-	//UI::DISPLAY_HUD(false);
-	//UI::DISPLAY_RADAR(true);
 
 	// for debug drawing coords
 	bool widescreen = GRAPHICS::GET_IS_WIDESCREEN();
@@ -173,7 +192,7 @@ void main()
 			CAM::DESTROY_ALL_CAMS(true);
 			Cam cam = CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", true);
 			Vector3 coords;
-			coords.x = GAMEPLAY::GET_RANDOM_FLOAT_IN_RANGE(-3000.0, 3000.0);
+			coords.x = GAMEPLAY::GET_RANDOM_FLOAT_IN_RANGE(-1500.0, 3000.0);
 			coords.y = GAMEPLAY::GET_RANDOM_FLOAT_IN_RANGE(-2500.0, 6500.0);
 			setZCoord(coords);
 			CAM::SET_CAM_COORD(cam, coords.x, coords.y, coords.z);
@@ -190,7 +209,7 @@ void main()
 			// screenshot test
 		}
 
-		//update_features();
+		update_features();
 
 		// for debug drawing coords
 		Cam current_cam = CAM::GET_RENDERING_CAM();
