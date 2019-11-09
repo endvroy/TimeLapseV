@@ -36,22 +36,8 @@ void get_button_state(bool *a, bool *b, bool *up, bool *down, bool *l, bool *r)
 	if (l) *l = IsKeyDown(VK_NUMPAD4);
 }
 
-bool featureMiscLockRadio				=	false;
-bool featureMiscHideHud					=	false;
-
-
-// Updates all features that can be turned off by the game, being called each game frame
-void update_features() 
-{
-	// hide hud
-	if (featureMiscHideHud)
-		UI::HIDE_HUD_AND_RADAR_THIS_FRAME();
-}
-
-
-int teleportActiveLineIndex = 0;
-
 // todo: tp
+int teleportActiveLineIndex = 0;
 bool process_teleport_menu()
 {
 	const float lineWidth = 250.0;
@@ -91,7 +77,6 @@ bool process_teleport_menu()
 		DWORD maxTickCount = GetTickCount() + waitTime;
 		do 
 		{
-			update_features();
 			WAIT(0);
 		} while (GetTickCount() < maxTickCount);
 		waitTime = 0;
@@ -206,18 +191,33 @@ void main()
 
 	while (true)
 	{
-		if (IsKeyJustUp(VK_NUMPAD0))
+		if (IsKeyJustUp(VK_NUMPAD1))
 		{
-			// beep to prove the mod is working
-			//AUDIO::PLAY_SOUND_FRONTEND(-1, "Checkpoint_Hit", "GTAO_FM_Events_Soundset", 0);
-
+			// set time test
 			// advance time by 1 hour
 			int h = TIME::GET_CLOCK_HOURS();
 			h = (h + 1) % 24;
 			int m = TIME::GET_CLOCK_MINUTES();
 			TIME::SET_CLOCK_TIME(h, m, 0);
 		}
-		//UI::HIDE_HUD_AND_RADAR_THIS_FRAME();
+		if (IsKeyJustUp(VK_NUMPAD2))
+		{
+			// teleport test
+			CAM::DESTROY_ALL_CAMS(true);
+			Cam cam = CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", true);
+			//Vector3 coords = { 1747.0f, 3273.7f, 41.1f };
+			CAM::SET_CAM_COORD(cam, 1747.0f, 3273.7f, 41.1f);
+			CAM::RENDER_SCRIPT_CAMS(true, // render camera
+				false,	// smooth transition - false
+				0,	// transition time
+				false, // always 0 
+				false // always 0
+			);
+		}
+		if (IsKeyJustUp(VK_NUMPAD3))
+		{
+			// screenshot test
+		}
 		WAIT(0);
 	}
 }
