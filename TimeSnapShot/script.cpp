@@ -173,8 +173,8 @@ void main()
 			CAM::DESTROY_ALL_CAMS(true);
 			Cam cam = CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", true);
 			Vector3 coords;
-			coords.x = GAMEPLAY::GET_RANDOM_FLOAT_IN_RANGE(-3000.0, 3000.0);
-			coords.y = GAMEPLAY::GET_RANDOM_FLOAT_IN_RANGE(-2500.0, 6500.0);
+			coords.x = GAMEPLAY::GET_RANDOM_FLOAT_IN_RANGE(-1500.0, 2000.0);
+			coords.y = GAMEPLAY::GET_RANDOM_FLOAT_IN_RANGE(-2500.0, 5500.0);
 			setZCoord(coords);
 			CAM::SET_CAM_COORD(cam, coords.x, coords.y, coords.z);
 			CAM::SET_CAM_ROT(cam, rot.x, rot.y, rot.z, 2);
