@@ -1,6 +1,6 @@
 /*
 	THIS FILE IS A PART OF GTA V SCRIPT HOOK SDK
-				http://dev-c.com			
+				http://dev-c.com
 			(C) Alexander Blade 2015
 */
 
@@ -21,173 +21,137 @@
 
 #pragma warning(disable : 4244 4305) // double <-> float conversions
 
-bool trainer_switch_pressed()
-{
-	return IsKeyJustUp(VK_F4);
+void draw_text(char* text, float x, float y, float scale) {
+	UI::SET_TEXT_FONT(0);
+	UI::SET_TEXT_SCALE(scale, scale);
+	UI::SET_TEXT_COLOUR(255, 255, 255, 245);
+	UI::SET_TEXT_WRAP(0.0, 1.0);
+	UI::SET_TEXT_CENTRE(0);
+	UI::SET_TEXT_DROPSHADOW(2, 2, 0, 0, 0);
+	UI::SET_TEXT_EDGE(1, 0, 0, 0, 205);
+	UI::_SET_TEXT_ENTRY("STRING");
+	UI::_ADD_TEXT_COMPONENT_STRING(text);
+	UI::_DRAW_TEXT(y, x);
 }
 
-void get_button_state(bool *a, bool *b, bool *up, bool *down, bool *l, bool *r)
-{
-	if (a) *a = IsKeyDown(VK_NUMPAD5);
-	if (b) *b = IsKeyDown(VK_NUMPAD0) || trainer_switch_pressed() || IsKeyDown(VK_BACK);
-	if (up) *up = IsKeyDown(VK_NUMPAD8);
-	if (down) *down = IsKeyDown(VK_NUMPAD2);
-	if (r) *r = IsKeyDown(VK_NUMPAD6);
-	if (l) *l = IsKeyDown(VK_NUMPAD4);
-}
+static struct {
+	LPCSTR  text;
+	float x;
+	float y;
+	float z;
+} predefined_coords[] = {
+		{ "MARKER" },
+		{ "MICHAEL'S HOUSE", -852.4f, 160.0f, 65.6f },
+		{ "FRANKLIN'S HOUSE", 7.9f, 548.1f, 175.5f },
+		{ "TREVOR'S TRAILER", 1985.7f, 3812.2f, 32.2f },
+		{ "AIRPORT ENTRANCE", -1034.6f, -2733.6f, 13.8f },
+		{ "AIRPORT FIELD", -1336.0f, -3044.0f, 13.9f },
+		{ "ELYSIAN ISLAND", 338.2f, -2715.9f, 38.5f },
+		{ "JETSAM", 760.4f, -2943.2f, 5.8f },
+		{ "STRIPCLUB", 127.4f, -1307.7f, 29.2f },
+		{ "ELBURRO HEIGHTS", 1384.0f, -2057.1f, 52.0f },
+		{ "FERRIS WHEEL", -1670.7f, -1125.0f, 13.0f },
+		{ "CHUMASH", -3192.6f, 1100.0f, 20.2f },
+		{ "WINDFARM", 2354.0f, 1830.3f, 101.1f },
+		{ "MILITARY BASE", -2047.4f, 3132.1f, 32.8f },
+		{ "MCKENZIE AIRFIELD", 2121.7f, 4796.3f, 41.1f },
+		{ "DESERT AIRFIELD", 1747.0f, 3273.7f, 41.1f },
+		{ "CHILLIAD", 425.4f, 5614.3f, 766.5f }
+};
 
-// todo: tp
-int teleportActiveLineIndex = 0;
-bool process_teleport_menu()
-{
-	const float lineWidth = 250.0;
-	const int lineCount	= 17;
-
-	std::string caption = "TELEPORT";
-
-	static struct {
-		LPCSTR  text;
-		float x;
-		float y;
-		float z;
-	} lines[lineCount] = {
-			{ "MARKER" },
-			{ "MICHAEL'S HOUSE", -852.4f, 160.0f, 65.6f },
-			{ "FRANKLIN'S HOUSE", 7.9f, 548.1f, 175.5f },
-			{ "TREVOR'S TRAILER", 1985.7f, 3812.2f, 32.2f },
-			{ "AIRPORT ENTRANCE", -1034.6f, -2733.6f, 13.8f },
-			{ "AIRPORT FIELD", -1336.0f, -3044.0f, 13.9f },
-			{ "ELYSIAN ISLAND", 338.2f, -2715.9f, 38.5f },
-			{ "JETSAM", 760.4f, -2943.2f, 5.8f },
-			{ "STRIPCLUB", 127.4f, -1307.7f, 29.2f },
-			{ "ELBURRO HEIGHTS", 1384.0f, -2057.1f, 52.0f },
-			{ "FERRIS WHEEL", -1670.7f, -1125.0f, 13.0f },
-			{ "CHUMASH", -3192.6f, 1100.0f, 20.2f },
-			{ "WINDFARM", 2354.0f, 1830.3f, 101.1f },
-			{ "MILITARY BASE", -2047.4f, 3132.1f, 32.8f },
-			{ "MCKENZIE AIRFIELD", 2121.7f, 4796.3f, 41.1f },
-			{ "DESERT AIRFIELD", 1747.0f, 3273.7f, 41.1f },
-			{ "CHILLIAD", 425.4f, 5614.3f, 766.5f }
+void setZCoord(Vector3& coords) {
+	bool groundFound = false;
+	static float groundCheckHeight[] = {
+		0.0, 50.0, 100.0, 150.0, 200.0, 250.0, 300.0, 350.0, 400.0,
+		450.0, 500.0, 550.0, 600.0, 650.0, 700.0, 750.0, 800.0
 	};
-
-	DWORD waitTime = 150;
-	while (true)
-	{
-		// timed menu draw, used for pause after active line switch
-		DWORD maxTickCount = GetTickCount() + waitTime;
-		do 
-		{
-			WAIT(0);
-		} while (GetTickCount() < maxTickCount);
-		waitTime = 0;
-
-		// process buttons
-		bool bSelect, bBack, bUp, bDown;
-		get_button_state(&bSelect, &bBack, &bUp, &bDown, NULL, NULL);
-		if (bSelect)
-		{
-
-			// get entity to teleport
-			Entity e = PLAYER::PLAYER_PED_ID();
-			if (PED::IS_PED_IN_ANY_VEHICLE(e, 0)) 
-				e = PED::GET_VEHICLE_PED_IS_USING(e);
-
-			// get coords
-			Vector3 coords;
-			bool success = false;
-			if (teleportActiveLineIndex == 0) // marker
-			{			
-				bool blipFound = false;
-				// search for marker blip
-				int blipIterator = UI::_GET_BLIP_INFO_ID_ITERATOR();
-				for (Blip i = UI::GET_FIRST_BLIP_INFO_ID(blipIterator); UI::DOES_BLIP_EXIST(i) != 0; i = UI::GET_NEXT_BLIP_INFO_ID(blipIterator))
-				{
-					if (UI::GET_BLIP_INFO_ID_TYPE(i) == 4) 
-					{
-						coords = UI::GET_BLIP_INFO_ID_COORD(i);
-						blipFound = true;
-						break;
-					}
-				}	
-				if (blipFound)
-				{
-					// load needed map region and check height levels for ground existence
-					bool groundFound = false;
-					static float groundCheckHeight[] = {
-						100.0, 150.0, 50.0, 0.0, 200.0, 250.0, 300.0, 350.0, 400.0, 
-						450.0, 500.0, 550.0, 600.0, 650.0, 700.0, 750.0, 800.0
-					};					
-					for (int i = 0; i < sizeof(groundCheckHeight) / sizeof(float); i++)
-					{
-						ENTITY::SET_ENTITY_COORDS_NO_OFFSET(e, coords.x, coords.y, groundCheckHeight[i], 0, 0, 1);
-						WAIT(100);
-						if (GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, groundCheckHeight[i], &coords.z, FALSE))
-						{
-							groundFound = true;
-							coords.z += 3.0;
-							break;
-						}
-					}
-					// if ground not found then set Z in air and give player a parachute
-					if (!groundFound)
-					{
-						coords.z = 1000.0;
-						WEAPON::GIVE_DELAYED_WEAPON_TO_PED(PLAYER::PLAYER_PED_ID(), 0xFBAB5776, 1, 0);
-					}
-					success = true;
-				}
-
-			} else // predefined coords
-			{
-				coords.x = lines[teleportActiveLineIndex].x;
-				coords.y = lines[teleportActiveLineIndex].y;
-				coords.z = lines[teleportActiveLineIndex].z;
-				success = true;
+	Entity e = PLAYER::PLAYER_PED_ID();
+	for (int i = 0; sizeof(groundCheckHeight) / sizeof(float); i++) {
+		//ENTITY::SET_ENTITY_COORDS_NO_OFFSET(e, coords.x, coords.y, groundCheckHeight[i], 0, 0, 1);
+		STREAMING::CLEAR_FOCUS();
+		STREAMING::CLEAR_HD_AREA();
+		STREAMING::_SET_FOCUS_AREA(coords.x, coords.y, groundCheckHeight[i], 0, 0, 0);
+		WAIT(200);
+		if (GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, groundCheckHeight[i], &coords.z, false)) {
+			groundFound = true;
+			// force to above sea level
+			if (coords.z < 0) {
+				coords.z = 0;
 			}
-
-			// set player pos
-			if (success)
-			{
-				ENTITY::SET_ENTITY_COORDS_NO_OFFSET(e, coords.x, coords.y, coords.z, 0, 0, 1);
-				WAIT(0);	
-				return true;
-			}
-			
-			waitTime = 200;
-		} else
-		if (bBack || trainer_switch_pressed())
-		{
+			coords.z += GAMEPLAY::GET_RANDOM_FLOAT_IN_RANGE(3.0, 13.0);
 			break;
-		} else
-		if (bUp)
-		{
-			if (teleportActiveLineIndex == 0) 
-				teleportActiveLineIndex = lineCount;
-			teleportActiveLineIndex--;
-			waitTime = 150;
-		} else
-		if (bDown)
-		{
-			teleportActiveLineIndex++;
-			if (teleportActiveLineIndex == lineCount) 
-				teleportActiveLineIndex = 0;			
-			waitTime = 150;
 		}
 	}
-	return false;
+	// if ground not found then set Z in air
+	if (!groundFound) {
+		coords.z = 300.0;
+	}
 }
 
+void setGroundZ(Vector3& coords) {
+	static float firstCheck[] = { 0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
+
+	static float secondCheck[] = { 1000, 900, 800, 700, 600, 500,
+		400, 300, 200, 100, 0, -100, -200, -300, -400, -500 };
+
+	static float thirdCheck[] = { -500, -400, -300, -200, -100, 0,
+		100, 200, 300, 400, 500, 600, 700, 800, 900, 1000};
+
+	if (GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, 1000.0, &coords.z, false)) {
+		return;
+	}
+
+	for (int i = 0; sizeof(firstCheck) / sizeof(float); i++) {
+		if (GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, firstCheck[i], &coords.z, false)) {
+			return;
+		}
+	}
+
+	for (int i = 0; sizeof(secondCheck) / sizeof(float); i++) {
+		if (GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, secondCheck[i], &coords.z, false)) {
+			return;
+		}
+	}
+	for (int i = 0; sizeof(thirdCheck) / sizeof(float); i++) {
+		if (GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, thirdCheck[i], &coords.z, false)) {
+			return;
+		}
+	}
+}
+
+void update_features()
+{
+	// wait until player is ready, basicly to prevent using the trainer while player is dead or arrested
+	while (ENTITY::IS_ENTITY_DEAD(PLAYER::PLAYER_PED_ID()) || PLAYER::IS_PLAYER_BEING_ARRESTED(PLAYER::PLAYER_ID(), TRUE))
+		WAIT(0);
+
+	// common variables
+	Player player = PLAYER::PLAYER_ID();
+	Ped playerPed = PLAYER::PLAYER_PED_ID();
+	BOOL bPlayerExists = ENTITY::DOES_ENTITY_EXIST(playerPed);
+
+	// player invincible
+	if (bPlayerExists)
+		PLAYER::SET_PLAYER_INVINCIBLE(player, TRUE);
+}
 
 void main()
-{	
+{
 	// reset time
 	TIME::SET_CLOCK_TIME(0, 0, 0);
 	// pause time
 	TIME::PAUSE_CLOCK(true);
+
+	GAMEPLAY::SET_FADE_IN_AFTER_LOAD(false);
+	Player player = PLAYER::PLAYER_ID();
+	PLAYER::SET_PLAYER_INVINCIBLE(player, TRUE);
 	// hide hud and radar
 	// DOES NOT WORK
 	//UI::DISPLAY_HUD(false);
 	//UI::DISPLAY_RADAR(true);
+
+	// for debug drawing coords
+	bool widescreen = GRAPHICS::GET_IS_WIDESCREEN();
 
 	while (true)
 	{
@@ -203,10 +167,17 @@ void main()
 		if (IsKeyJustUp(VK_NUMPAD2))
 		{
 			// teleport test
+			Cam current_cam = CAM::GET_RENDERING_CAM();
+			Vector3 rot = CAM::GET_CAM_ROT(current_cam, 2);
+
 			CAM::DESTROY_ALL_CAMS(true);
 			Cam cam = CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", true);
-			//Vector3 coords = { 1747.0f, 3273.7f, 41.1f };
-			CAM::SET_CAM_COORD(cam, 1747.0f, 3273.7f, 41.1f);
+			Vector3 coords;
+			coords.x = GAMEPLAY::GET_RANDOM_FLOAT_IN_RANGE(-3000.0, 3000.0);
+			coords.y = GAMEPLAY::GET_RANDOM_FLOAT_IN_RANGE(-2500.0, 6500.0);
+			setZCoord(coords);
+			CAM::SET_CAM_COORD(cam, coords.x, coords.y, coords.z);
+			CAM::SET_CAM_ROT(cam, rot.x, rot.y, rot.z, 2);
 			CAM::RENDER_SCRIPT_CAMS(true, // render camera
 				false,	// smooth transition - false
 				0,	// transition time
@@ -218,6 +189,19 @@ void main()
 		{
 			// screenshot test
 		}
+
+		//update_features();
+
+		// for debug drawing coords
+		Cam current_cam = CAM::GET_RENDERING_CAM();
+		Vector3 position = CAM::GET_CAM_COORD(current_cam);
+		Vector3 rot = CAM::GET_CAM_ROT(current_cam, 2);
+		char coords_text[200];
+		sprintf_s(coords_text, "X: %.3f Y: %.3f Z: %.3f, rotX: %.3f rotY: %.3f rotZ: %.3f",
+			position.x, position.y, position.z,
+			rot.x, rot.y, rot.z);
+		widescreen ? draw_text(coords_text, 0.978, 0.205 - 0.03, 0.3) : draw_text(coords_text, 0.978, 0.205, 0.3);
+
 		WAIT(0);
 	}
 }
