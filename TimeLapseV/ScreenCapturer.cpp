@@ -23,10 +23,7 @@ void ScreenCapturer::screenshot(char path[])
 	// copy screen to bitmap
 	BOOL    bRet = BitBlt(hDC, 0, 0, windowWidth, windowHeight, hScreen, 0, 0, SRCCOPY);
 
-	IStream* stream = NULL;
-	HRESULT hr = CreateStreamOnHGlobal(0, TRUE, &stream);
 	CImage image;
-	ULARGE_INTEGER liSize;
 
 	// save screenshot to png
 	image.Attach(hBitmap);

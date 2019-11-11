@@ -143,7 +143,7 @@ void main()
 
 	ScreenCapturer screenCapturer;
 	PathManager pathManager;
-	pathManager.setBasePath("E:\\TimeLapseV");
+	pathManager.setBasePath("E:\\TimeLapseVData");
 	pathManager.makeBaseDir();
 
 	int loc = 0;
