@@ -9,6 +9,8 @@
   <ItemGroup>
     <ClCompile Include="keyboard.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="PathManager.cpp" />
+    <ClCompile Include="ScreenCapturer.cpp" />
     <ClCompile Include="script.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -17,6 +19,8 @@
     <ClInclude Include="inc\natives.h" />
     <ClInclude Include="inc\types.h" />
     <ClInclude Include="keyboard.h" />
+    <ClInclude Include="PathManager.h" />
+    <ClInclude Include="ScreenCapturer.h" />
     <ClInclude Include="script.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

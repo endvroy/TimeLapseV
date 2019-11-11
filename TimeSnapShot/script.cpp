@@ -1,21 +1,14 @@
 /*
-	THIS FILE IS A PART OF GTA V SCRIPT HOOK SDK
-				http://dev-c.com
-			(C) Alexander Blade 2015
+	NUM0				activate
+	NUM1				advance time test
+	NUM2 				teleport camera test
+	NUM3			 	screenshot test
 */
 
-/*
-	F4					activate
-	NUM2/8/4/6			navigate thru the menus and lists (numlock must be on)
-	NUM5 				select
-	NUM0/BACKSPACE/F4 	back
-	NUM9/3 				use vehicle boost when active
-	NUM+ 				use vehicle rockets when active
-*/
-
+#include "ScreenCapturer.h"
+#include "PathManager.h"
 #include "script.h"
 #include "keyboard.h"
-
 #include <string>
 #include <ctime>
 
@@ -119,21 +112,6 @@ void setGroundZ(Vector3& coords) {
 	}
 }
 
-void update_features()
-{
-	// wait until player is ready, basicly to prevent using the trainer while player is dead or arrested
-	while (ENTITY::IS_ENTITY_DEAD(PLAYER::PLAYER_PED_ID()) || PLAYER::IS_PLAYER_BEING_ARRESTED(PLAYER::PLAYER_ID(), TRUE))
-		WAIT(0);
-
-	// common variables
-	Player player = PLAYER::PLAYER_ID();
-	Ped playerPed = PLAYER::PLAYER_PED_ID();
-	BOOL bPlayerExists = ENTITY::DOES_ENTITY_EXIST(playerPed);
-
-	// player invincible
-	if (bPlayerExists)
-		PLAYER::SET_PLAYER_INVINCIBLE(player, TRUE);
-}
 
 void main()
 {
@@ -145,10 +123,10 @@ void main()
 	GAMEPLAY::SET_FADE_IN_AFTER_LOAD(false);
 	Player player = PLAYER::PLAYER_ID();
 	PLAYER::SET_PLAYER_INVINCIBLE(player, TRUE);
-	// hide hud and radar
-	// DOES NOT WORK
-	//UI::DISPLAY_HUD(false);
-	//UI::DISPLAY_RADAR(true);
+	
+	ScreenCapturer screenCapturer;
+	PathManager pathManager;
+	pathManager.setBasePath("E:\\TimeLapseV");
 
 	// for debug drawing coords
 	bool widescreen = GRAPHICS::GET_IS_WIDESCREEN();
@@ -188,9 +166,8 @@ void main()
 		if (IsKeyJustUp(VK_NUMPAD3))
 		{
 			// screenshot test
+			screenCapturer.screenshot("E:\\screenshot.png");
 		}
-
-		//update_features();
 
 		// for debug drawing coords
 		Cam current_cam = CAM::GET_RENDERING_CAM();
