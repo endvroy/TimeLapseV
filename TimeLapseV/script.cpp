@@ -47,7 +47,7 @@ void setZCoord(Vector3& coords) {
 			if (coords.z < 0) {
 				coords.z = 0;
 			}
-			coords.z += GAMEPLAY::GET_RANDOM_FLOAT_IN_RANGE(3.0, 13.0);
+			coords.z += GAMEPLAY::GET_RANDOM_FLOAT_IN_RANGE(3.0, 25.0);
 			break;
 		}
 	}
@@ -57,47 +57,17 @@ void setZCoord(Vector3& coords) {
 	}
 }
 
-void setGroundZ(Vector3& coords) {
-	static float firstCheck[] = { 0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
-
-	static float secondCheck[] = { 1000, 900, 800, 700, 600, 500,
-		400, 300, 200, 100, 0, -100, -200, -300, -400, -500 };
-
-	static float thirdCheck[] = { -500, -400, -300, -200, -100, 0,
-		100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
-
-	if (GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, 1000.0, &coords.z, false)) {
-		return;
-	}
-
-	for (int i = 0; sizeof(firstCheck) / sizeof(float); i++) {
-		if (GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, firstCheck[i], &coords.z, false)) {
-			return;
-		}
-	}
-
-	for (int i = 0; sizeof(secondCheck) / sizeof(float); i++) {
-		if (GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, secondCheck[i], &coords.z, false)) {
-			return;
-		}
-	}
-	for (int i = 0; sizeof(thirdCheck) / sizeof(float); i++) {
-		if (GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, thirdCheck[i], &coords.z, false)) {
-			return;
-		}
-	}
-}
-
 void tpCamera() {
-	Cam current_cam = CAM::GET_RENDERING_CAM();
-	Vector3 rot = CAM::GET_CAM_ROT(current_cam, 2);
-
 	CAM::DESTROY_ALL_CAMS(true);
 	Cam cam = CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", true);
 	Vector3 coords;
 	coords.x = GAMEPLAY::GET_RANDOM_FLOAT_IN_RANGE(-1500.0, 2000.0);
 	coords.y = GAMEPLAY::GET_RANDOM_FLOAT_IN_RANGE(-2500.0, 5500.0);
 	setZCoord(coords);
+	Vector3 rot;
+	rot.x = GAMEPLAY::GET_RANDOM_FLOAT_IN_RANGE(-30.0, 30.0);
+	rot.y = 0.0;
+	rot.z = GAMEPLAY::GET_RANDOM_FLOAT_IN_RANGE(-178.0, 178.0);
 	CAM::SET_CAM_COORD(cam, coords.x, coords.y, coords.z);
 	CAM::SET_CAM_ROT(cam, rot.x, rot.y, rot.z, 2);
 	CAM::RENDER_SCRIPT_CAMS(true, // render camera
@@ -123,6 +93,18 @@ void drawCamCoord() {
 	bool widescreen = GRAPHICS::GET_IS_WIDESCREEN();
 	Vector3 position = getCamCoord();
 	Vector3 rot = getCamRot();
+	char coords_text[200];
+	sprintf_s(coords_text, "X: %.3f Y: %.3f Z: %.3f, rotX: %.3f rotY: %.3f rotZ: %.3f",
+		position.x, position.y, position.z,
+		rot.x, rot.y, rot.z);
+	widescreen ? draw_text(coords_text, 0.978, 0.205 - 0.03, 0.3) : draw_text(coords_text, 0.978, 0.205, 0.3);
+}
+
+void drawGameplayCamCoord() {
+	// for figuring out reasonable coords
+	bool widescreen = GRAPHICS::GET_IS_WIDESCREEN();
+	Vector3 position = CAM::GET_GAMEPLAY_CAM_COORD();
+	Vector3 rot = CAM::GET_GAMEPLAY_CAM_ROT(0);
 	char coords_text[200];
 	sprintf_s(coords_text, "X: %.3f Y: %.3f Z: %.3f, rotX: %.3f rotY: %.3f rotZ: %.3f",
 		position.x, position.y, position.z,
@@ -200,6 +182,7 @@ void main()
 			}
 		}
 
+		//drawGameplayCamCoord();
 		drawCamCoord();
 
 		WAIT(0);
