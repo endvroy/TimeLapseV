@@ -14,6 +14,11 @@ void PathManager::getLocDirPath() {
 	sprintf_s(pathBuf, PATH_BUF_LEN, "%s\\%d", basePath, locIndex);
 }
 
+void PathManager::getMetadataPath()
+{
+	sprintf_s(pathBuf, PATH_BUF_LEN, "%s\\%d\\metadata.json", basePath, locIndex);
+}
+
 void PathManager::makeLocDir() {
 	getLocDirPath();
 	CreateDirectory(pathBuf, NULL);

@@ -12,6 +12,7 @@
 #include "keyboard.h"
 #include <string>
 #include <ctime>
+#include <fstream>
 
 #pragma warning(disable : 4244 4305) // double <-> float conversions
 
@@ -100,6 +101,31 @@ void drawCamCoord() {
 	widescreen ? draw_text(coords_text, 0.978, 0.205 - 0.03, 0.3) : draw_text(coords_text, 0.978, 0.205, 0.3);
 }
 
+
+#define METADATA_LEN 2000
+char metaBuf[METADATA_LEN];
+
+void saveMetadata(const char path[]) {
+	Vector3 position = getCamCoord();
+	Vector3 rot = getCamRot();
+
+	sprintf_s(metaBuf, METADATA_LEN,
+		"{\n"
+		"    \"X\" : %.3f,\n"
+		"    \"Y\" : %.3f,\n"
+		"    \"Z\" : %.3f,\n"
+		"    \"rotX\" : %.3f,\n"
+		"    \"rotY\" : %.3f,\n"
+		"    \"rotZ\" : %.3f\n"
+		"}\n",
+		position.x, position.y, position.z,
+		rot.x, rot.y, rot.z);
+	std::ofstream metaFile;
+	metaFile.open(path);
+	metaFile << metaBuf;
+	metaFile.close();
+}
+
 void drawGameplayCamCoord() {
 	// for figuring out reasonable coords
 	bool widescreen = GRAPHICS::GET_IS_WIDESCREEN();
@@ -112,7 +138,7 @@ void drawGameplayCamCoord() {
 	widescreen ? draw_text(coords_text, 0.978, 0.205 - 0.03, 0.3) : draw_text(coords_text, 0.978, 0.205, 0.3);
 }
 
-#define LOC_NUM 5
+#define LOC_NUM 3
 
 void main()
 {
@@ -153,6 +179,11 @@ void main()
 			// screenshot test
 			screenCapturer.screenshot("E:\\screenshot.png");
 		}
+		if (IsKeyJustUp(VK_NUMPAD4))
+		{
+			// save metadata test
+			saveMetadata("E:\\metadata.json");
+		}
 		if (IsKeyJustUp(VK_NUMPAD0))
 		{
 			// start capturing
@@ -178,7 +209,13 @@ void main()
 						pause = true;
 					}
 				}
+				pathManager.getMetadataPath();
+				drawCamCoord();
+				saveMetadata(pathManager.pathBuf);
 				loc++;
+			}
+			else {
+				pause = true;
 			}
 		}
 

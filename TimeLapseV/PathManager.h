@@ -18,6 +18,7 @@ public:
 	void setBasePath(const char path[]);
 	void makeBaseDir();
 	void getLocDirPath();
+	void getMetadataPath();
 	void makeLocDir();
 	void getFilePath();
 };
