@@ -20,5 +20,5 @@ void PathManager::makeLocDir() {
 }
 
 void PathManager::getFilePath() {
-	sprintf_s(pathBuf, PATH_BUF_LEN, "%s\\%d\\%d_%d.png", basePath, locIndex, hour, minute);
+	sprintf_s(pathBuf, PATH_BUF_LEN, "%s\\%d\\%d_%d.jpg", basePath, locIndex, hour, minute);
 }

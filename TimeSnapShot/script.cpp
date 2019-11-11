@@ -1,8 +1,9 @@
 /*
-	NUM0				activate
+	NUM0				activate/resume
 	NUM1				advance time test
 	NUM2 				teleport camera test
 	NUM3			 	screenshot test
+	NUM9			 	pause
 */
 
 #include "ScreenCapturer.h"
@@ -26,31 +27,6 @@ void draw_text(char* text, float x, float y, float scale) {
 	UI::_ADD_TEXT_COMPONENT_STRING(text);
 	UI::_DRAW_TEXT(y, x);
 }
-
-static struct {
-	LPCSTR  text;
-	float x;
-	float y;
-	float z;
-} predefined_coords[] = {
-		{ "MARKER" },
-		{ "MICHAEL'S HOUSE", -852.4f, 160.0f, 65.6f },
-		{ "FRANKLIN'S HOUSE", 7.9f, 548.1f, 175.5f },
-		{ "TREVOR'S TRAILER", 1985.7f, 3812.2f, 32.2f },
-		{ "AIRPORT ENTRANCE", -1034.6f, -2733.6f, 13.8f },
-		{ "AIRPORT FIELD", -1336.0f, -3044.0f, 13.9f },
-		{ "ELYSIAN ISLAND", 338.2f, -2715.9f, 38.5f },
-		{ "JETSAM", 760.4f, -2943.2f, 5.8f },
-		{ "STRIPCLUB", 127.4f, -1307.7f, 29.2f },
-		{ "ELBURRO HEIGHTS", 1384.0f, -2057.1f, 52.0f },
-		{ "FERRIS WHEEL", -1670.7f, -1125.0f, 13.0f },
-		{ "CHUMASH", -3192.6f, 1100.0f, 20.2f },
-		{ "WINDFARM", 2354.0f, 1830.3f, 101.1f },
-		{ "MILITARY BASE", -2047.4f, 3132.1f, 32.8f },
-		{ "MCKENZIE AIRFIELD", 2121.7f, 4796.3f, 41.1f },
-		{ "DESERT AIRFIELD", 1747.0f, 3273.7f, 41.1f },
-		{ "CHILLIAD", 425.4f, 5614.3f, 766.5f }
-};
 
 void setZCoord(Vector3& coords) {
 	bool groundFound = false;
@@ -88,7 +64,7 @@ void setGroundZ(Vector3& coords) {
 		400, 300, 200, 100, 0, -100, -200, -300, -400, -500 };
 
 	static float thirdCheck[] = { -500, -400, -300, -200, -100, 0,
-		100, 200, 300, 400, 500, 600, 700, 800, 900, 1000};
+		100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
 
 	if (GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, 1000.0, &coords.z, false)) {
 		return;
@@ -112,6 +88,49 @@ void setGroundZ(Vector3& coords) {
 	}
 }
 
+void tpCamera() {
+	Cam current_cam = CAM::GET_RENDERING_CAM();
+	Vector3 rot = CAM::GET_CAM_ROT(current_cam, 2);
+
+	CAM::DESTROY_ALL_CAMS(true);
+	Cam cam = CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", true);
+	Vector3 coords;
+	coords.x = GAMEPLAY::GET_RANDOM_FLOAT_IN_RANGE(-1500.0, 2000.0);
+	coords.y = GAMEPLAY::GET_RANDOM_FLOAT_IN_RANGE(-2500.0, 5500.0);
+	setZCoord(coords);
+	CAM::SET_CAM_COORD(cam, coords.x, coords.y, coords.z);
+	CAM::SET_CAM_ROT(cam, rot.x, rot.y, rot.z, 2);
+	CAM::RENDER_SCRIPT_CAMS(true, // render camera
+		false,	// smooth transition - false
+		0,	// transition time
+		false, // always 0 
+		false // always 0
+	);
+}
+
+Vector3 getCamCoord() {
+	Cam current_cam = CAM::GET_RENDERING_CAM();
+	return CAM::GET_CAM_COORD(current_cam);
+}
+
+Vector3 getCamRot() {
+	Cam current_cam = CAM::GET_RENDERING_CAM();
+	return CAM::GET_CAM_ROT(current_cam, 2);
+}
+
+void drawCamCoord() {
+	// for debug drawing coords
+	bool widescreen = GRAPHICS::GET_IS_WIDESCREEN();
+	Vector3 position = getCamCoord();
+	Vector3 rot = getCamRot();
+	char coords_text[200];
+	sprintf_s(coords_text, "X: %.3f Y: %.3f Z: %.3f, rotX: %.3f rotY: %.3f rotZ: %.3f",
+		position.x, position.y, position.z,
+		rot.x, rot.y, rot.z);
+	widescreen ? draw_text(coords_text, 0.978, 0.205 - 0.03, 0.3) : draw_text(coords_text, 0.978, 0.205, 0.3);
+}
+
+#define LOC_NUM 5
 
 void main()
 {
@@ -120,16 +139,15 @@ void main()
 	// pause time
 	TIME::PAUSE_CLOCK(true);
 
-	GAMEPLAY::SET_FADE_IN_AFTER_LOAD(false);
-	Player player = PLAYER::PLAYER_ID();
-	PLAYER::SET_PLAYER_INVINCIBLE(player, TRUE);
-	
+	GAMEPLAY::SET_FADE_IN_AFTER_LOAD(true);
+
 	ScreenCapturer screenCapturer;
 	PathManager pathManager;
 	pathManager.setBasePath("E:\\TimeLapseV");
+	pathManager.makeBaseDir();
 
-	// for debug drawing coords
-	bool widescreen = GRAPHICS::GET_IS_WIDESCREEN();
+	int loc = 0;
+	bool pause = true;
 
 	while (true)
 	{
@@ -145,39 +163,44 @@ void main()
 		if (IsKeyJustUp(VK_NUMPAD2))
 		{
 			// teleport test
-			Cam current_cam = CAM::GET_RENDERING_CAM();
-			Vector3 rot = CAM::GET_CAM_ROT(current_cam, 2);
+			tpCamera();
 
-			CAM::DESTROY_ALL_CAMS(true);
-			Cam cam = CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", true);
-			Vector3 coords;
-			coords.x = GAMEPLAY::GET_RANDOM_FLOAT_IN_RANGE(-1500.0, 2000.0);
-			coords.y = GAMEPLAY::GET_RANDOM_FLOAT_IN_RANGE(-2500.0, 5500.0);
-			setZCoord(coords);
-			CAM::SET_CAM_COORD(cam, coords.x, coords.y, coords.z);
-			CAM::SET_CAM_ROT(cam, rot.x, rot.y, rot.z, 2);
-			CAM::RENDER_SCRIPT_CAMS(true, // render camera
-				false,	// smooth transition - false
-				0,	// transition time
-				false, // always 0 
-				false // always 0
-			);
 		}
 		if (IsKeyJustUp(VK_NUMPAD3))
 		{
 			// screenshot test
 			screenCapturer.screenshot("E:\\screenshot.png");
 		}
+		if (IsKeyJustUp(VK_NUMPAD0))
+		{
+			// start capturing
+			pause = false;
+		}
+		if (IsKeyJustUp(VK_NUMPAD9)) {
+			pause = true;
+		}
+		if (pause == false) {
+			// capturing logic
+			if (loc < LOC_NUM) {
+				tpCamera();
+				pathManager.locIndex = loc;
+				pathManager.makeLocDir();
+				WAIT(3000); // wait for rendering to complete
+				for (int hour = 0; hour <= 23; hour++) {
+					TIME::SET_CLOCK_TIME(hour, 0, 0);
+					pathManager.hour = hour;
+					pathManager.getFilePath();
+					WAIT(850);
+					screenCapturer.screenshot(pathManager.pathBuf);
+					if (IsKeyJustUp(VK_NUMPAD9)) {
+						pause = true;
+					}
+				}
+				loc++;
+			}
+		}
 
-		// for debug drawing coords
-		Cam current_cam = CAM::GET_RENDERING_CAM();
-		Vector3 position = CAM::GET_CAM_COORD(current_cam);
-		Vector3 rot = CAM::GET_CAM_ROT(current_cam, 2);
-		char coords_text[200];
-		sprintf_s(coords_text, "X: %.3f Y: %.3f Z: %.3f, rotX: %.3f rotY: %.3f rotZ: %.3f",
-			position.x, position.y, position.z,
-			rot.x, rot.y, rot.z);
-		widescreen ? draw_text(coords_text, 0.978, 0.205 - 0.03, 0.3) : draw_text(coords_text, 0.978, 0.205, 0.3);
+		drawCamCoord();
 
 		WAIT(0);
 	}

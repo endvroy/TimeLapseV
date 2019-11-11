@@ -30,7 +30,7 @@ void ScreenCapturer::screenshot(char path[])
 
 	// save screenshot to png
 	image.Attach(hBitmap);
-	image.Save(path, Gdiplus::ImageFormatPNG);
+	image.Save(path, Gdiplus::ImageFormatJPEG);
 }
 
 ScreenCapturer::~ScreenCapturer() {
